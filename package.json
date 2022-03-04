@@ -1,0 +1,11 @@
+{
+  "name": "wechaty-quiz",
+  "version": "0.0.0",
+  "description": "A Wechaty plugin to play quiz game in a room",
+  "keywords": ["wechaty", "quiz"],
+  "author": "Jack Lu <jacklu@jacklu.me>",
+  "license": "ISC",
+  "peerDependencies": {
+    "wechaty": "^0.60.10"
+  }
+}
