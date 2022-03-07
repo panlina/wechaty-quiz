@@ -1,4 +1,5 @@
 /** @typedef { import("wechaty").Wechaty } Wechaty */
+/** @typedef { import("wechaty").Contact } Contact */
 /** @typedef { import("wechaty").Room } Room */
 /** @typedef { import("wechaty").Message } Message */
 var { MessageType } = require("wechaty-puppet");
@@ -28,15 +29,17 @@ module.exports = function WechatyQuizPlugin(config) {
 		});
 	};
 	async function quiz(/** @type {Room} */room) {
-		var vote = 0;
+		/** @type {Set<Contact["id"]>} */
+		var vote = new Set();
 		await room.say(`抢答比赛即将进行，${config.voteTimeout / 1000}秒内回复\".\"人数>=${config.voteMin}时比赛开始。比赛奖励：红包5元。`);
 		room.on('message', voteCounter);
 		function voteCounter(/** @type {Message} */message) {
-			if (message.text() == '.') vote++;
+			if (message.text() == '.')
+				vote.add(message.talker().id);
 		}
 		setTimeout(async () => {
 			room.off('message', voteCounter);
-			if (vote >= config.voteMin) {
+			if (vote.size >= config.voteMin) {
 				await room.say(`人数足够，即将开始比赛，请作好准备，抢答时间只有${config.answerTimeout / 1000}秒。`);
 				setTimeout(async () => {
 					var quiz = await config.fetch();
