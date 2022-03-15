@@ -34,15 +34,18 @@ module.exports = function WechatyQuizPlugin(config) {
 		await room.say(`抢答比赛即将进行，${config.voteTimeout / 1000}秒内回复\".\"人数>=${config.voteMin}时比赛开始。比赛奖励：红包5元。`);
 		room.on('message', voteCounter);
 		function voteCounter(/** @type {Message} */message) {
-			if (message.text() == '.')
+			if (message.text() == '.') {
 				vote.add(message.talker().id);
+				if (vote.size >= config.voteMin) {
+					room.off('message', voteCounter);
+					clearTimeout(timer);
+					start();
+				}
+			}
 		}
-		setTimeout(async () => {
+		var timer = setTimeout(async () => {
 			room.off('message', voteCounter);
-			if (vote.size >= config.voteMin)
-				await start();
-			else
-				await room.say("人数不足，我们下次比赛再见。");
+			await room.say("人数不足，我们下次比赛再见。");
 		}, config.voteTimeout);
 		async function start() {
 			await room.say(`人数足够，即将开始比赛，请作好准备，抢答时间只有${config.answerTimeout / 1000}秒。`);
