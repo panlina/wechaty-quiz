@@ -39,31 +39,34 @@ module.exports = function WechatyQuizPlugin(config) {
 		}
 		setTimeout(async () => {
 			room.off('message', voteCounter);
-			if (vote.size >= config.voteMin) {
-				await room.say(`人数足够，即将开始比赛，请作好准备，抢答时间只有${config.answerTimeout / 1000}秒。`);
-				setTimeout(async () => {
-					var quiz = await config.fetch();
-					await room.say(quiz.question);
-					room.on('message', answerListener);
-					var timer = setTimeout(async () => {
-						room.off('message', answerListener);
-						await room.say("时间到，没有人答对，本次比赛结束。");
-						await room.say(`我们下次比赛再见。`);
-					}, config.answerTimeout);
-					async function answerListener(/** @type {Message} */message) {
-						if (message.type() == MessageType.Unknown) return;
-						if (message.text() == quiz.answer) {
-							room.off('message', answerListener);
-							clearTimeout(timer);
-							await room.say("回答正确。");
-							await room.say(`恭喜${message.talker().name()}赢得了本次比赛。`);
-							await room.say(`我们下次比赛再见。`);
-						} else
-							await message.say("回答错误。");
-					}
-				}, 5 * 1000);
-			} else
+			if (vote.size >= config.voteMin)
+				await start();
+			else
 				await room.say("人数不足，我们下次比赛再见。");
 		}, config.voteTimeout);
+		async function start() {
+			await room.say(`人数足够，即将开始比赛，请作好准备，抢答时间只有${config.answerTimeout / 1000}秒。`);
+			setTimeout(async () => {
+				var quiz = await config.fetch();
+				await room.say(quiz.question);
+				room.on('message', answerListener);
+				var timer = setTimeout(async () => {
+					room.off('message', answerListener);
+					await room.say("时间到，没有人答对，本次比赛结束。");
+					await room.say(`我们下次比赛再见。`);
+				}, config.answerTimeout);
+				async function answerListener(/** @type {Message} */message) {
+					if (message.type() == MessageType.Unknown) return;
+					if (message.text() == quiz.answer) {
+						room.off('message', answerListener);
+						clearTimeout(timer);
+						await room.say("回答正确。");
+						await room.say(`恭喜${message.talker().name()}赢得了本次比赛。`);
+						await room.say(`我们下次比赛再见。`);
+					} else
+						await message.say("回答错误。");
+				}
+			}, 5 * 1000);
+		}
 	}
 };
