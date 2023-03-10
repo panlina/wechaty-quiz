@@ -13,7 +13,11 @@ var { MessageType } = require("wechaty-puppet");
  */
 module.exports = function WechatyQuizPlugin(config) {
 	return function (/** @type {Wechaty} */bot) {
-		bot.on("message", async (/** @type {Message} */message) => {
+		bot.on("message", listener);
+		return () => {
+			bot.off("message", listener);
+		};
+		async function listener(/** @type {Message} */message) {
 			if (message.talker().self()) {
 				var match = message.text().match(/^quiz: (.*)/);
 				if (match) {
@@ -26,7 +30,7 @@ module.exports = function WechatyQuizPlugin(config) {
 					quiz(room);
 				}
 			}
-		});
+		}
 	};
 	async function quiz(/** @type {Room} */room) {
 		/** @type {Set<Contact["id"]>} */
