@@ -2,10 +2,12 @@
 /** @typedef { import("wechaty").Contact } Contact */
 /** @typedef { import("wechaty").Room } Room */
 /** @typedef { import("wechaty").Message } Message */
+/** @typedef { import("wechaty-puppet").RoomQueryFilter } RoomQueryFilter */
 var { MessageType } = require("wechaty-puppet");
 
 /**
  * @param {Object} config
+ * @param {RoomQueryFilter[]} [config.filter] the filter of rooms to enable this plugin
  * @param {() => Promise<{ question: string, answer: string }>} config.fetch quiz fetcher
  * @param {number} config.voteMin min vote to start the quiz
  * @param {number} config.voteTimeout vote timeout in milliseconds
@@ -18,18 +20,23 @@ module.exports = function WechatyQuizPlugin(config) {
 			bot.off("message", listener);
 		};
 		async function listener(/** @type {Message} */message) {
-			if (message.talker().self()) {
-				var match = message.text().match(/^quiz: (.*)/);
-				if (match) {
-					var [, roomTopic] = match;
-					var room = await bot.Room.find({ topic: roomTopic });
-					if (!room) {
-						bot.userSelf().say(`Room ${roomTopic} not found`);
-						return;
-					}
-					quiz(room);
-				}
-			}
+			var room = message.room();
+			if (
+				room
+				&&
+				message.text() == "抢答比赛" && (
+					!config.filter || (
+						await Promise.all(
+							config.filter.map(
+								async filter => bot.puppet.roomQueryFilterFactory(filter)(
+									await bot.puppet.roomPayload(room.id)
+								)
+							)
+						)
+					).some(Boolean)
+				)
+			)
+				quiz(room);
 		}
 	};
 	async function quiz(/** @type {Room} */room) {
