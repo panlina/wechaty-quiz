@@ -70,6 +70,7 @@ module.exports = function WechatyQuizPlugin(config) {
 					await room.say(`我们下次比赛再见。`);
 				}, config.answerTimeout);
 				async function answerListener(/** @type {Message} */message) {
+					if (message.self()) return;
 					if (message.type() == MessageType.Unknown) return;
 					if (message.text() == quiz.answer) {
 						room.off('message', answerListener);
