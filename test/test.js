@@ -98,6 +98,44 @@ it('filter', async function() {
 	await bot.stop();
 });
 
+it('vote', async function() {
+	this.timeout(10000);
+
+	var mocker = new Mocker();
+
+	var puppet = new PuppetMock({ mocker });
+	var bot = new Wechaty({ puppet });
+	bot.use(new WechatyQuizPlugin({
+		fetch: () => Promise.resolve({ question: "a", answer: "b" }),
+		voteMin: 2,
+		voteTimeout: 5 * 1000,
+		answerTimeout: 10 * 1000
+	}));
+
+	await bot.start();
+
+	mocker.scan('https://github.com/wechaty', 1);
+	var user = mocker.createContact();
+	mocker.login(user);
+
+	var contactA = mocker.createContact();
+	var contactB = mocker.createContact();
+	var room = mocker.createRoom({ memberIdList: [user.id, contactA.id, contactB.id] });
+
+	contactA.say("抢答比赛").to(room);
+	var message = await waitForMessage(room);
+	assert.match(message.text(), /^抢答比赛即将进行/);
+
+	contactA.say(".").to(room);
+	await assert.rejects(waitForMessage(room));
+
+	await sleep(5000 - 100 - 50);
+	var message = await waitForMessage(room);
+	assert.equal(message.text(), "人数不足，我们下次比赛再见。");
+
+	await bot.stop();
+});
+
 /**
  * @param {Contact | Room} conversation
  * @return {Promise<Message>}
